@@ -21,12 +21,18 @@ while cv2.waitKey(33) < 0:
     imgBlack = cv2.morphologyEx(gray, cv2.MORPH_BLACKHAT, rect) # 어두운 부분 강조
     gray = cv2.subtract(cv2.add(gray, imgTop), imgBlack)
 
-    imgBlur = cv2.GaussianBlur(gray, ksize=(5,5), sigmaX=0)
-    imgThresh = cv2.adaptiveThreshold(imgBlur, maxValue=255, adaptiveMethod=cv2.ADAPTIVE_THRESH_GAUSSIAN_C, thresholdType=cv2.THRESH_BINARY_INV, blockSize=19, C=9)
+    imgBlur = cv2.GaussianBlur(gray, ksize=(5,5), sigmaX=0) # 블러 처리
+    imgThresh = cv2.adaptiveThreshold(imgBlur, maxValue=255, adaptiveMethod=cv2.ADAPTIVE_THRESH_GAUSSIAN_C, thresholdType=cv2.THRESH_BINARY_INV, blockSize=19, C=9) # Threshold 처리
 
-    contours, _ = cv2.findContours(imgThresh, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(imgThresh, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_SIMPLE) # Contour 처리
     temp_result = np.zeros((800,800, 1), dtype=np.uint8)
+    cv2.drawContours(temp_result, contours=contours, contourIdx=-1, color=(255, 255, 255))
+    temp_result = np.zeros((800,800, 1), dtype=np.uint8)
+    contours_dict = []
 
+    for contour in contours:
+        x, y, w, h = cv2.boundingRect(contour)
+        cv2.rectangle(temp_result, pt1=(x,y), pt2=(x+w, y+h), color=(255, 255, 255), thickness=2)
 
     cv2.imshow("VideoFrame", imgThresh)
 capture.release()
