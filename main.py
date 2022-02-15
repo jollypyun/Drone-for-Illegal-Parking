@@ -3,6 +3,10 @@ import pytesseract
 import numpy as np
 import matplotlib.pyplot as plt
 
+MIN_AREA = 80
+MIN_WIDTH, MIN_HEIGHT = 2, 8
+MIN_RATIO, MAX_RATIO = 0.25, 1.0
+
 # 비디오 화면 창 출력
 capture = cv2.VideoCapture(0)
 capture.set(cv2.CAP_PROP_FRAME_WIDTH, 800)
@@ -29,11 +33,34 @@ while cv2.waitKey(33) < 0:
     cv2.drawContours(temp_result, contours=contours, contourIdx=-1, color=(255, 255, 255))
     temp_result = np.zeros((800, 800, 1), dtype=np.uint8)
     contours_dict = []
+    cnt = 0
 
     for contour in contours:
         x, y, w, h = cv2.boundingRect(contour)
-        cv2.rectangle(temp_result, pt1=(x, y), pt2=(x+w, y+h), color=(255, 255, 255), thickness=2)
-        contours_dict.append({'contour': contour, 'x': x, 'y': y, 'w': w, 'h': h, 'cx': x + (w/2), 'cy': y + (h/2)})
+        area, ratio = w*h, w/h
+        if area > MIN_AREA and w > MIN_WIDTH and h > MIN_HEIGHT and MIN_RATIO < ratio < MAX_RATIO:
+            idx = cnt
+            cnt += 1
+            cv2.rectangle(temp_result, pt1=(x, y), pt2=(x+w, y+h), color=(255, 255, 255), thickness=2)
+            contours_dict.append({'contour': contour, 'x': x, 'y': y, 'w': w, 'h': h, 'cx': x + (w/2), 'cy': y + (h/2), 'idx' : idx})
+
+    for d1 in contours_dict:
+
+        for d2 in contours_dict:
+            if d1['idx'] == d2['idx']:
+                continue
+            dx = abs(d1['cx'] - d2['cx'])
+            dy = abs(d1['cy'] - d2['cy'])
+
+            diagonal_length = np.sqrt(d1['w'] ** 2 + d1['h'] ** 2)
+            distance = np.linalg.norm(np.array([d1['cx'], d1['cy']]) - np.array([d2['cx'], d2['cy']]))
+            if dx == 0:
+                angle_diff = 90
+            else: angle_diff = np.degrees(np.arctan(dy/dx))
+            area_diff = abs(d1['w'] * d1['h'] - d2['w'] * d2['h']) / (d1['w'] * d1['h'])
+            width_diff = abs(d1['w'] - d2['h']) / d1['w']
+            height_diff = abs(d1['h'] - d2['h']) / d1['h']
+
 
     cv2.imshow("VideoFrame", temp_result)
 capture.release()
